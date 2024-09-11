@@ -1,7 +1,8 @@
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.3'
-	id 'io.spring.dependency-management' version '1.1.6'
+	id 'io.spring.dependency-management' version '1.1.6' //최신 버전의 의존성을 세팅해줌
+	id 'org.asciidoctor.jvm.convert' version '3.3.2' // Asciidoctor 플러그인 추가 ( AsciiDoc 을 HTML로 변화시키는 목적)
 }
 
 group = 'com.restapi'
@@ -23,14 +24,45 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	snippetsDir = file("build/generated-snippets")  // snippetsDir 변수 정의
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+	implementation 'org.springframework.restdocs:spring-restdocs-asciidoctor'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA 의존성
+	implementation 'com.h2database:h2' // H2 데이터베이스 의존성
+	implementation 'org.apache.httpcomponents.client5:httpclient5'
+	// RestAssured 의존성
+	testImplementation 'io.rest-assured:rest-assured:5.3.2'
+	testImplementation 'org.hamcrest:hamcrest:2.2'
+
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+
+test {
+	useJUnitPlatform()  // JUnit 5 사용
+	outputs.dir snippetsDir
+}
+
+asciidoctor {
+	dependsOn test  // 테스트 실행 후 문서화 작업 진행
+	inputs.dir snippetsDir
+	sources {
+		include 'index.adoc'
+	}
+	resources {
+		from snippetsDir
+		into 'build/docs/asciidoc'
+	}
+
+	// 'snippetsDir'을 'snippets' 변수로 사용하기 위한 설정
+	attributes 'snippets': snippetsDir
 }
